@@ -1,42 +1,107 @@
 import heapq
 
-start = (2, 8, 3, 1, 6, 4, 7, 0, 5)
-goal = (1, 2, 3, 8, 0, 4, 7, 6, 5)
-moves = {"Up": (-1, 0), "Down": (1, 0), "Left": (0, -1), "Right": (0, 1)}
+start = (2, 8, 3,
+         1, 6, 4,
+         7, 0, 5)
 
-
-def show(state):
-    for i in range(0, 9, 3):
-        print(state[i : i + 3])
-    print()
-
+goal = (1, 2, 3,
+        8, 0, 4,
+        7, 6, 5)
 
 def heuristic(state):
-    return sum(
-        abs(i // 3 - goal.index(tile) // 3) + abs(i % 3 - goal.index(tile) % 3)
-        for i, tile in enumerate(state)
-        if tile
-    )
+    count = 0
 
+    for i in range(9):
+        if state[i] != 0 and state[i] != goal[i]:
+            count += 1
 
-def neighbors(state):
+    return count
+
+def get_neighbors(state):
+    neighbors = []
     blank = state.index(0)
-    row, col = divmod(blank, 3)
-    for move, (dr, dc) in moves.items():
-        r, c = row + dr, col + dc
-        if 0 <= r < 3 and 0 <= c < 3:
-            other = r * 3 + c
-            new = list(state)
-            new[blank], new[other] = new[other], new[blank]
-            yield tuple(new), move
+
+    row = blank // 3
+    col = blank % 3
+
+    moves = [
+        (-1, 0),  # Up
+        (1, 0),   # Down
+        (0, -1),  # Left
+        (0, 1)    # Right
+    ]
+
+    for dr, dc in moves:
+        new_row = row + dr
+        new_col = col + dc
+
+        if 0 <= new_row < 3 and 0 <= new_col < 3:
+
+            new_blank = new_row * 3 + new_col
+
+            new_state = list(state)
+
+            new_state[blank], new_state[new_blank] = (
+                new_state[new_blank], new_state[blank]
+            )
+
+            neighbors.append(tuple(new_state))
+
+    return neighbors
 
 
-def a_star(start, goal):
-    queue = [(heuristic(start), 0, start)]
-    costs, parents = {start: 0}, {start: (None, None)}
-    visited = set()
-    while queue:
-        _, cost, state = heapq.heappop(queue)
-        if state in visited:
+
+def astar():
+
+    open_list = [(heuristic(start), 0, start)]
+
+    cost = {start: 0}
+
+    parent = {start: None}
+
+    while open_list:
+
+        f, g, current = heapq.heappop(open_list)
+
+        if g != cost[current]:
             continue
-        visited.add
+
+        if current == goal:
+            break
+
+        for next_state in get_neighbors(current):
+
+            new_g = g + 1
+
+            if new_g < cost.get(next_state, float('inf')):
+
+                cost[next_state] = new_g
+                parent[next_state] = current
+
+                new_h = heuristic(next_state)
+                new_f = new_g + new_h
+
+                heapq.heappush(
+                    open_list,
+                    (new_f, new_g, next_state)
+                )
+
+    path = []
+    current = goal
+
+    while current is not None:
+        path.append(current)
+        current = parent[current]
+
+    path.reverse()
+
+    print("Solution Path:")
+
+    for state in path:
+        for i in range(0, 9, 3):
+            print(state[i:i+3])
+        print()
+
+    print("Total Moves:", len(path) - 1)
+
+astar()
